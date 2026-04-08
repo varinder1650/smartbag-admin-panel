@@ -33,6 +33,8 @@ export interface ProductItem {
   product_image?: string[];
   quantity: number;
   price: number;
+  warehouse_name?: string;
+  warehouse_id?: string;
 }
 
 export interface PrintoutItem {

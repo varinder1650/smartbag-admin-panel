@@ -199,6 +199,12 @@ export const OrderDrawer = ({
                             <p className="text-xs text-muted-foreground">
                               Qty: {item.quantity}
                             </p>
+                            {item.warehouse_name && (
+                              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                                <MapPin className="h-3 w-3" />
+                                Warehouse: {item.warehouse_name}
+                              </p>
+                            )}
                           </div>
                         </div>
                         <p className="font-semibold">
