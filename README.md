@@ -1,1 +1,1 @@
-# admin-panel
+# smartbag-admin-panel
