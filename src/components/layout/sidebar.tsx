@@ -16,6 +16,7 @@ import {
   Bell,
   Activity,
   Warehouse,
+  Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -76,6 +77,21 @@ const navigation = [
     name: "Warehouses",
     href: "/dashboard/warehouses",
     icon: Warehouse,
+  },
+  {
+    name: "Hubs",
+    href: "/dashboard/hubs",
+    icon: Building2,
+  },
+  {
+    name: "Inv. Warehouses",
+    href: "/dashboard/warehouses-pg",
+    icon: Warehouse,
+  },
+  {
+    name: "Inventory",
+    href: "/dashboard/inventory",
+    icon: Package,
   },
   {
     name: "Pincodes",

@@ -203,9 +203,9 @@ class WebSocketService {
   }
 }
 
-const wsUrl = import.meta.env.DEV
-  ? "ws://localhost:8001/admin/ws"
-  : "ws://195.35.6.222/admin/ws";
+const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+const apiHost = window.location.host.replace(/^admin\./, "admin-api.");
+const wsUrl = `${wsProtocol}//${apiHost}/admin/ws`;
 
 export const wsService = new WebSocketService(wsUrl);
 export default wsService;

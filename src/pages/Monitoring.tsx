@@ -1,7 +1,6 @@
 export default function Monitoring() {
-  const monitorUrl = import.meta.env.DEV
-    ? "http://localhost:8000/monitor"
-    : "http://195.35.6.222:8000/monitor";
+  const apiHost = window.location.host.replace(/^admin\./, "api.");
+  const monitorUrl = `${window.location.protocol}//${apiHost}/monitor`;
 
   return (
     <div className="h-full w-full -m-6">

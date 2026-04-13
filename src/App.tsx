@@ -26,6 +26,9 @@ import NotificationsPage from "@/pages/Notifications";
 import PincodesPage from "./pages/Pincodes";
 import Monitoring from "./pages/Monitoring";
 import WarehousesPage from "./pages/Warehouses";
+import HubsPage from "./pages/Hubs";
+import WarehousesPgPage from "./pages/WarehousesPg";
+import InventoryMgmtPage from "./pages/InventoryMgmt";
 
 const AppContent = () => {
   const { isAuthenticated, user } = useAuthStore();
@@ -88,6 +91,9 @@ const AppContent = () => {
         <Route path= "pincodes" element= {<PincodesPage />}/>
         <Route path="monitoring" element={<Monitoring />} />
         <Route path="warehouses" element={<WarehousesPage />} />
+        <Route path="hubs" element={<HubsPage />} />
+        <Route path="warehouses-pg" element={<WarehousesPgPage />} />
+        <Route path="inventory" element={<InventoryMgmtPage />} />
       </Route>
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<NotFound />} />
