@@ -47,6 +47,7 @@ import {
   Copy,
   MapPinned,
   Trash2,
+  Ticket,
 } from "lucide-react";
 
 interface HubData {
@@ -79,6 +80,14 @@ interface PincodeMapping {
   priority: number;
 }
 
+interface PincodeData {
+  pincodeId?: string;
+  pincode: string;
+  city: string;
+  state: string;
+  status: boolean;
+}
+
 export default function WarehousesPgPage() {
   const { toast } = useToast();
   const [warehouses, setWarehouses] = useState<PgWarehouseData[]>([]);
@@ -89,6 +98,9 @@ export default function WarehousesPgPage() {
   const [editingWarehouse, setEditingWarehouse] = useState<PgWarehouseData | null>(null);
   const [selectedWarehouse, setSelectedWarehouse] = useState<PgWarehouseData | null>(null);
   const [pincodes, setPincodes] = useState<PincodeMapping[]>([]);
+  const [allPincodes, setAllPincodes] = useState<PincodeData[]>([]);
+  const [showAddPincodeModal, setShowAddPincodeModal] = useState(false);
+  const [addPincodeForm, setAddPincodeForm] = useState({ warehouse_id: "", pincode: "", priority: "" });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -106,6 +118,7 @@ export default function WarehousesPgPage() {
   useEffect(() => {
     wsService.send({ type: "get_pg_warehouses" });
     wsService.send({ type: "get_hubs" });
+    wsService.send({ type: "get_pincodes" });
 
     const cleanupWh = wsService.onMessage<{ warehouses?: PgWarehouseData[] }>(
       "pg_warehouses_data",
@@ -166,6 +179,13 @@ export default function WarehousesPgPage() {
       }
     });
 
+    const cleanupAllPincodes = wsService.onMessage<{ available_pincodes?: PincodeData[] }>(
+      "pincodes_data",
+      (message) => {
+        if (message.available_pincodes) setAllPincodes(message.available_pincodes);
+      }
+    );
+
     const cleanupError = wsService.onMessage<WsErrorData>("error", (data) => {
       setIsLoading(false);
       setIsSaving(false);
@@ -184,6 +204,7 @@ export default function WarehousesPgPage() {
       cleanupPincodes();
       cleanupPcAssigned();
       cleanupPcDeleted();
+      cleanupAllPincodes();
       cleanupError();
     };
   }, [toast, selectedWarehouse]);
@@ -276,6 +297,21 @@ export default function WarehousesPgPage() {
     });
   };
 
+  const handleStandaloneAddPincode = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!addPincodeForm.warehouse_id || !addPincodeForm.pincode || !addPincodeForm.priority) return;
+    setIsSaving(true);
+    wsService.send({
+      type: "assign_warehouse_pincodes",
+      data: {
+        warehouse_id: addPincodeForm.warehouse_id,
+        pincodes: [{ pincode: addPincodeForm.pincode, priority: parseInt(addPincodeForm.priority) }],
+      },
+    });
+    setAddPincodeForm({ warehouse_id: "", pincode: "", priority: "" });
+    setShowAddPincodeModal(false);
+  };
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast({ title: "Copied!", description: `${text} copied to clipboard` });
@@ -299,6 +335,79 @@ export default function WarehousesPgPage() {
             Multi-warehouse inventory system — manage warehouses under hubs with pincode priorities
           </p>
         </div>
+
+        <div className="flex gap-2">
+        <Dialog open={showAddPincodeModal} onOpenChange={(open) => { setShowAddPincodeModal(open); if (!open) setAddPincodeForm({ warehouse_id: "", pincode: "", priority: "" }); }}>
+          <DialogTrigger asChild>
+            <Button variant="outline">
+              <Ticket className="h-4 w-4 mr-2" />
+              Add Pincode
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Add Pincode to Warehouse</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleStandaloneAddPincode} className="space-y-4">
+              <div>
+                <Label>Warehouse *</Label>
+                <Select
+                  value={addPincodeForm.warehouse_id}
+                  onValueChange={(val) => setAddPincodeForm((p) => ({ ...p, warehouse_id: val }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a warehouse" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {warehouses.filter((w) => w.is_active).map((w) => (
+                      <SelectItem key={w.warehouse_id} value={w.warehouse_id}>
+                        {w.name} ({w.warehouse_id})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Pincode *</Label>
+                <Select
+                  value={addPincodeForm.pincode}
+                  onValueChange={(val) => setAddPincodeForm((p) => ({ ...p, pincode: val }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a pincode" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allPincodes.filter((p) => p.status).map((p) => (
+                      <SelectItem key={p.pincodeId || p.pincode} value={p.pincode}>
+                        {p.pincode} — {p.city}, {p.state}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="ap_priority">Priority *</Label>
+                <Input
+                  id="ap_priority"
+                  type="number"
+                  min={1}
+                  placeholder="e.g. 1"
+                  value={addPincodeForm.priority}
+                  onChange={(e) => setAddPincodeForm((p) => ({ ...p, priority: e.target.value }))}
+                  required
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => setShowAddPincodeModal(false)} disabled={isSaving}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSaving || !addPincodeForm.warehouse_id || !addPincodeForm.pincode || !addPincodeForm.priority}>
+                  {isSaving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Adding...</> : "Add Pincode"}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
 
         <Dialog open={showAddModal} onOpenChange={(open) => { setShowAddModal(open); if (!open) resetForm(); }}>
           <DialogTrigger asChild>
@@ -403,6 +512,7 @@ export default function WarehousesPgPage() {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Pincode management modal */}
@@ -415,12 +525,23 @@ export default function WarehousesPgPage() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="flex gap-2">
-              <Input
-                placeholder="Pincode"
+              <Select
                 value={newPincode.pincode}
-                onChange={(e) => setNewPincode((p) => ({ ...p, pincode: e.target.value }))}
-                className="flex-1"
-              />
+                onValueChange={(val) => setNewPincode((p) => ({ ...p, pincode: val }))}
+              >
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Select pincode" />
+                </SelectTrigger>
+                <SelectContent>
+                  {allPincodes
+                    .filter((p) => p.status && !pincodes.some((ap) => ap.pincode === p.pincode))
+                    .map((p) => (
+                      <SelectItem key={p.pincodeId || p.pincode} value={p.pincode}>
+                        {p.pincode} — {p.city}, {p.state}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
               <Input
                 placeholder="Priority"
                 type="number"
