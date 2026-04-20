@@ -38,6 +38,7 @@ export const ProductFormDialog = ({
 }: ProductFormDialogProps) => {
   const { toast } = useToast();
   const [images, setImages] = useState<string[]>([]);
+  const [mockupTemplate, setMockupTemplate] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     actual_price: "",
@@ -52,6 +53,11 @@ export const ProductFormDialog = ({
     description: "",
     allow_user_images: false,
     allow_user_description: false,
+    mockup_template_url: "",
+    printable_area_x: "25",
+    printable_area_y: "20",
+    printable_area_width: "50",
+    printable_area_height: "60",
   });
 
   useEffect(() => {
@@ -70,8 +76,14 @@ export const ProductFormDialog = ({
         description: product.description || "",
         allow_user_images: product.allow_user_images || false,
         allow_user_description: product.allow_user_description || false,
+        mockup_template_url: product.mockup_template_url || "",
+        printable_area_x: product.printable_area ? String(product.printable_area.x * 100) : "25",
+        printable_area_y: product.printable_area ? String(product.printable_area.y * 100) : "20",
+        printable_area_width: product.printable_area ? String(product.printable_area.width * 100) : "50",
+        printable_area_height: product.printable_area ? String(product.printable_area.height * 100) : "60",
       });
       setImages([]);
+      setMockupTemplate([]);
     } else {
       setFormData({
         name: "",
@@ -87,8 +99,14 @@ export const ProductFormDialog = ({
         description: "",
         allow_user_images: false,
         allow_user_description: false,
+        mockup_template_url: "",
+        printable_area_x: "25",
+        printable_area_y: "20",
+        printable_area_width: "50",
+        printable_area_height: "60",
       });
       setImages([]);
+      setMockupTemplate([]);
     }
   }, [product, open]);
 
@@ -125,6 +143,16 @@ export const ProductFormDialog = ({
       allow_user_images: formData.allow_user_images,
       allow_user_description: formData.allow_user_description,
       ...(images.length > 0 && { images }),
+      ...(formData.allow_user_images && {
+        mockup_template_url: formData.mockup_template_url || undefined,
+        printable_area: {
+          x: parseFloat(formData.printable_area_x) / 100,
+          y: parseFloat(formData.printable_area_y) / 100,
+          width: parseFloat(formData.printable_area_width) / 100,
+          height: parseFloat(formData.printable_area_height) / 100,
+        },
+        ...(mockupTemplate.length > 0 && { mockup_template: mockupTemplate }),
+      }),
     };
 
     if (product) {
@@ -259,7 +287,7 @@ export const ProductFormDialog = ({
               <SelectContent>
                 {warehouses.filter(w => w.status).map((warehouse) => (
                   <SelectItem key={warehouse.id} value={warehouse.id}>
-                    {warehouse.name} — {warehouse.city}, {warehouse.state}
+                    {warehouse.name}{warehouse.city ? ` — ${warehouse.city}, ${warehouse.state}` : ''}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -359,6 +387,77 @@ export const ProductFormDialog = ({
               />
             </div>
           </div>
+
+          {formData.allow_user_images && (
+            <div className="border rounded-lg p-4 space-y-4 bg-blue-50/50">
+              <div className="space-y-2">
+                <Label className="text-base font-semibold">Mockup Template Setup</Label>
+                <p className="text-sm text-muted-foreground">
+                  Upload a mockup image and define the printable area where customer images will appear
+                </p>
+              </div>
+
+              <ImageUploader
+                images={mockupTemplate}
+                onChange={setMockupTemplate}
+                maxImages={1}
+                existingImages={product?.mockup_template_url ? [product.mockup_template_url] : undefined}
+              />
+
+              <div className="space-y-2">
+                <Label className="font-medium">Printable Area (%)</Label>
+                <p className="text-xs text-muted-foreground">
+                  Define where the customer's image appears on the mockup (values are percentages of the template dimensions)
+                </p>
+                <div className="grid grid-cols-4 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="pa-x" className="text-xs">Left (X)</Label>
+                    <Input
+                      id="pa-x"
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={formData.printable_area_x}
+                      onChange={(e) => setFormData({ ...formData, printable_area_x: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="pa-y" className="text-xs">Top (Y)</Label>
+                    <Input
+                      id="pa-y"
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={formData.printable_area_y}
+                      onChange={(e) => setFormData({ ...formData, printable_area_y: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="pa-w" className="text-xs">Width</Label>
+                    <Input
+                      id="pa-w"
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={formData.printable_area_width}
+                      onChange={(e) => setFormData({ ...formData, printable_area_width: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="pa-h" className="text-xs">Height</Label>
+                    <Input
+                      id="pa-h"
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={formData.printable_area_height}
+                      onChange={(e) => setFormData({ ...formData, printable_area_height: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={onClose}>

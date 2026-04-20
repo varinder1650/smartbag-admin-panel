@@ -46,9 +46,18 @@ export default function Products() {
       toast({ title: "Product Deleted" });
     };
 
-    const handleWarehousesData = (data: { warehouses?: Warehouse[] }) => {
+    const handleWarehousesData = (data: { warehouses?: any[] }) => {
       if (data.warehouses) {
-        setWarehouses(data.warehouses);
+        setWarehouses(
+          data.warehouses.map((w) => ({
+            id: w.warehouse_id,
+            name: w.name,
+            address: "",
+            city: "",
+            state: "",
+            status: true,
+          }))
+        );
       }
     };
 
@@ -64,12 +73,12 @@ export default function Products() {
       wsService.onMessage("product_created", handleProductCreated),
       wsService.onMessage("product_updated", handleProductUpdated),
       wsService.onMessage("product_deleted", handleProductDeleted),
-      wsService.onMessage("warehouses_data", handleWarehousesData),
+      wsService.onMessage("pg_warehouses_data", handleWarehousesData),
       wsService.onMessage("error", handleError),
     ];
 
     wsService.send({ type: 'get_products' });
-    wsService.send({ type: 'get_warehouses' });
+    wsService.send({ type: 'get_pg_warehouses' });
 
     return () => {
       cleanups.forEach(cleanup => cleanup());

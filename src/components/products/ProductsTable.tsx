@@ -49,6 +49,7 @@ export const ProductsTable = ({
     <Table>
       <TableHeader>
         <TableRow>
+          <TableHead>Product ID</TableHead>
           <TableHead>Images</TableHead>
           <TableHead>Name</TableHead>
           <TableHead>Selling Price</TableHead>
@@ -66,6 +67,7 @@ export const ProductsTable = ({
           
           return (
             <TableRow key={product.id}>
+              <TableCell className="font-mono text-xs text-muted-foreground">{product.id}</TableCell>
               <TableCell>
                 <div className="flex items-center space-x-1">
                   {primaryImageUrl ? (
