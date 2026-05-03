@@ -93,24 +93,21 @@ export default function Marketing() {
   const handleBannerImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Extract dominant color directly from File (avoids crossOrigin canvas taint)
+    try {
+      const color = await getColor(file as any);
+      if (color) {
+        const [r, g, b] = color;
+        setForm((f) => ({ ...f, bg_color: rgbToHex(r, g, b) }));
+      }
+    } catch (_) {}
+
+    // Read as data URL for preview + upload
     const reader = new FileReader();
-    reader.onload = async (ev) => {
+    reader.onload = (ev) => {
       const dataUrl = ev.target?.result as string;
       setForm((f) => ({ ...f, image_data: dataUrl, image_url: dataUrl }));
-
-      // Extract dominant color
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = async () => {
-        try {
-          const color = await getColor(img);
-          if (color) {
-            const [r, g, b] = color;
-            setForm((f) => ({ ...f, bg_color: rgbToHex(r, g, b) }));
-          }
-        } catch (_) {}
-      };
-      img.src = dataUrl;
     };
     reader.readAsDataURL(file);
   };
