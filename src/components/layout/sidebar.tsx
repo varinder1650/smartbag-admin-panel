@@ -17,6 +17,7 @@ import {
   Activity,
   Warehouse,
   Building2,
+  Megaphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -32,6 +33,11 @@ const navigation = [
     name: "Dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
+  },
+  {
+    name: "Marketing",
+    href: "/dashboard/marketing",
+    icon: Megaphone,
   },
   {
     name: "Products",

@@ -29,6 +29,7 @@ import WarehousesPage from "./pages/Warehouses";
 import HubsPage from "./pages/Hubs";
 import WarehousesPgPage from "./pages/WarehousesPg";
 import InventoryMgmtPage from "./pages/InventoryMgmt";
+import Marketing from "./pages/Marketing";
 
 const AppContent = () => {
   const { isAuthenticated, user } = useAuthStore();
@@ -94,6 +95,7 @@ const AppContent = () => {
         <Route path="hubs" element={<HubsPage />} />
         <Route path="warehouses-pg" element={<WarehousesPgPage />} />
         <Route path="inventory" element={<InventoryMgmtPage />} />
+        <Route path="marketing" element={<Marketing />} />
       </Route>
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<NotFound />} />
