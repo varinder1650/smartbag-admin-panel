@@ -18,8 +18,6 @@ import { useMarketingStore, MarketingBanner, MarketingContainer } from "@/store/
 import { wsService } from "@/services/websocket";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Edit, Trash2, Megaphone, X } from "lucide-react";
-// @ts-ignore — colorthief v3 has no bundled TS types
-import { getColor } from "colorthief";
 
 const EMPTY_CONTAINER: MarketingContainer = {
   title: "",
@@ -43,6 +41,39 @@ const EMPTY_BANNER: Omit<MarketingBanner, "_id" | "id"> = {
 
 function rgbToHex(r: number, g: number, b: number): string {
   return "#" + [r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("");
+}
+
+function extractDominantColor(file: File): Promise<string> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 100;
+      canvas.height = 100;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { URL.revokeObjectURL(url); resolve("#FFFFFF"); return; }
+      ctx.drawImage(img, 0, 0, 100, 100);
+      const data = ctx.getImageData(0, 0, 100, 100).data;
+      const counts: Record<string, number> = {};
+      for (let i = 0; i < data.length; i += 4) {
+        const a = data[i + 3];
+        if (a < 128) continue; // skip transparent
+        const r = Math.round(data[i] / 16) * 16;
+        const g = Math.round(data[i + 1] / 16) * 16;
+        const b = Math.round(data[i + 2] / 16) * 16;
+        const key = `${r},${g},${b}`;
+        counts[key] = (counts[key] || 0) + 1;
+      }
+      URL.revokeObjectURL(url);
+      const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+      if (!top) { resolve("#FFFFFF"); return; }
+      const [r, g, b] = top[0].split(",").map(Number);
+      resolve(rgbToHex(r, g, b));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve("#FFFFFF"); };
+    img.src = url;
+  });
 }
 
 export default function Marketing() {
@@ -94,14 +125,9 @@ export default function Marketing() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Extract dominant color directly from File (avoids crossOrigin canvas taint)
-    try {
-      const color = await getColor(file as any);
-      if (color) {
-        const [r, g, b] = color;
-        setForm((f) => ({ ...f, bg_color: rgbToHex(r, g, b) }));
-      }
-    } catch (_) {}
+    // Extract dominant color via canvas (reliable, no external dependency)
+    const extracted = await extractDominantColor(file);
+    setForm((f) => ({ ...f, bg_color: extracted }));
 
     // Read as data URL for preview + upload
     const reader = new FileReader();
@@ -272,14 +298,17 @@ export default function Marketing() {
               )}
             </div>
 
-            {/* Auto-extracted bg color */}
+            {/* Background color — auto-extracted, manually overridable */}
             <div className="flex items-center gap-3">
-              <Label>Background Color (auto-extracted)</Label>
-              <div
-                className="h-8 w-8 rounded border"
-                style={{ backgroundColor: form.bg_color }}
+              <Label>Background Color</Label>
+              <input
+                type="color"
+                value={form.bg_color}
+                onChange={(e) => setForm((f) => ({ ...f, bg_color: e.target.value }))}
+                className="h-8 w-10 rounded border cursor-pointer"
               />
               <span className="text-sm text-muted-foreground font-mono">{form.bg_color}</span>
+              <span className="text-xs text-muted-foreground">(auto-extracted, click to change)</span>
             </div>
 
             {/* Title / Subtitle */}
