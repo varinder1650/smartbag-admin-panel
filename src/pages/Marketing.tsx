@@ -18,8 +18,8 @@ import { useMarketingStore, MarketingBanner, MarketingContainer } from "@/store/
 import { wsService } from "@/services/websocket";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Edit, Trash2, Megaphone, X } from "lucide-react";
-// @ts-ignore — colorthief has no bundled types
-import ColorThief from "colorthief";
+// @ts-ignore — colorthief v3 has no bundled TS types
+import { getColor } from "colorthief";
 
 const EMPTY_CONTAINER: MarketingContainer = {
   title: "",
@@ -101,11 +101,13 @@ export default function Marketing() {
       // Extract dominant color
       const img = new Image();
       img.crossOrigin = "anonymous";
-      img.onload = () => {
+      img.onload = async () => {
         try {
-          const ct = new ColorThief();
-          const [r, g, b] = ct.getColor(img);
-          setForm((f) => ({ ...f, bg_color: rgbToHex(r, g, b) }));
+          const color = await getColor(img);
+          if (color) {
+            const [r, g, b] = color;
+            setForm((f) => ({ ...f, bg_color: rgbToHex(r, g, b) }));
+          }
         } catch (_) {}
       };
       img.src = dataUrl;
